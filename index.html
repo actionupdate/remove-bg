@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #inputImage {
+            max-width: 80%;
+            margin: 20px auto;
+        }
+        #outputImage {
+            max-width: 80%;
+            margin: 20px auto;
+            display: none;
+        }
+        #loader {
+            display: none;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        .color-selector {
+            margin-top: 10px;
+        }
+        .color-box {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .background-option {
+            display: none;
+        }
+        /* New styles for purple background and blue buttons */
+        .color-box.purple { /* Purple color box */
+            background-color: purple;
+        }
+        button {
+            background-color: blue; /* Blue buttons */
+            color: white; /* White text on buttons */
+            padding: 10px 20px; /* Adjust padding for buttons */
+            border: none; /* Remove default button border */
+            cursor: pointer;
+            margin-top: 10px; /* Add margin top to buttons */
+        }
+    </style>
+</head>
+<body>
+    <h1>Background Remover Tool</h1>
+    <input type="file" id="inputImage" accept="image/*">
+    <br>
+    <button onclick="previewImage()">Preview Image</button>
+    <button onclick="removeBackground()">Remove Background</button>
+    <br>
+    <div id="loader">Processing...</div>
+    <br>
+    <div id="outputContainer">
+        <div id="backgroundOptions" class="background-option">
+            <label for="backgroundType">Background Type:</label>
+            <select id="backgroundType">
+                <option value="color">Solid Color</option>
+                <option value="image">Image</option>
+            </select>
+            <br>
+            <div id="colorPalette" class="color-selector">
+                <span>Background Color:</span>
+                <div class="color-box" style="background-color: #ffffff" onclick="setColor('#ffffff')"></div>
+                <div class="color-box" style="background-color: #000000" onclick="setColor('#000000')"></div>
+                <!-- Add purple color box -->
+                <div class="color-box purple" onclick="setColor('purple')"></div>
+                <!-- Add more color boxes as needed -->
+            </div>
+            <input type="file" id="backgroundImage" class="background-option" accept="image/*">
+        </div>
+        <br>
+        <img id="outputImage" alt="Background Removed Image">
+        <button id="downloadButton" style="display: none;" onclick="downloadImage()">Download Image</button>
+    </div>
+    
+    <script>
+
+function previewImage() {
+            var input = document.getElementById('inputImage');
+            var output = document.getElementById('outputImage');
+            output.src = URL.createObjectURL(input.files[0]);
+            output.style.display = 'block';
+        }
+
+        function removeBackground() {
+            var loader = document.getElementById('loader');
+            loader.style.display = 'block'; // Show loader
+            // Simulate background removal process
+            setTimeout(function() {
+                loader.style.display = 'none'; // Hide loader
+                // Here you can add code to actually remove the background
+                // Once done, display the output image and other controls
+                var outputImage = document.getElementById('outputImage');
+                outputImage.style.display = 'block';
+                var downloadButton = document.getElementById('downloadButton');
+                downloadButton.style.display = 'block';
+            }, 2000); // Simulating 2 seconds processing time
+        }
+
+function previewImage() {
+            var input = document.getElementById('inputImage');
+            var output = document.getElementById('outputImage');
+            output.src = URL.createObjectURL(input.files[0]);
+            output.style.display = 'block';
+        }
+
+        async function removeBackground() {
+            const inputImage = document.getElementById('inputImage').files[0];
+            if (!inputImage) {
+                alert('Please select an image.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image_file', inputImage);
+            formData.append('size', 'regular');
+
+            const apiKey = 'phpPGgL3NhYhRzqUPWciDmKc'; // Replace with your remove.bg API key
+            const apiUrl = 'https://api.remove.bg/v1.0/removebg';
+
+            try {
+                document.getElementById('loader').style.display = 'block';
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': apiKey
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove background.');
+                }
+
+                const result = await response.blob();
+                const outputImage = document.getElementById('outputImage');
+                outputImage.src = URL.createObjectURL(result);
+                outputImage.style.display = 'inline';
+                document.getElementById('downloadButton').style.display = 'inline';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        document.getElementById('backgroundType').addEventListener('change', function() {
+            const backgroundType = this.value;
+            if (backgroundType === 'color') {
+                document.getElementById('backgroundColor').style.display = 'inline';
+                document.getElementById('backgroundImage').style.display = 'none';
+            } else if (backgroundType === 'image') {
+                document.getElementById('backgroundColor').style.display = 'none';
+                document.getElementById('backgroundImage').style.display = 'inline';
+            }
+        });
+
+        document.getElementById('backgroundColor').addEventListener('change', function() {
+            const backgroundColor = this.value;
+            const outputImage = document.getElementById('outputImage');
+            outputImage.style.backgroundColor = backgroundColor;
+        });
+
+        document.getElementById('backgroundImage').addEventListener('change', function() {
+            const backgroundImage = this.files[0];
+            const outputImage = document.getElementById('outputImage');
+            outputImage.style.backgroundImage = `url(${URL.createObjectURL(backgroundImage)})`;
+        });
+
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const outputImage = document.getElementById('outputImage');
+            const canvas = document.createElement('canvas');
+            canvas.width = outputImage.width;
+            canvas.height = outputImage.height;
+            const ctx = canvas.getContext('2d');
+
+            // Draw background
+            const backgroundType = document.getElementById('backgroundType').value;
+            if (backgroundType === 'color') {
+                ctx.fillStyle = document.getElementById('backgroundColor').value;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (backgroundType === 'image') {
+                const backgroundImage = document.getElementById('backgroundImage').files[0];
+                const background = new Image();
+                background.src = URL.createObjectURL(backgroundImage);
+                background.onload = function() {
+                    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+                };
+            }
+
+            // Draw output image
+            ctx.drawImage(outputImage, 0, 0);
+
+            // Download image
+            anchorElement = document.createElement('a'); //<a></a>
+        anchorElement.href = imageURL;
+        anchorElement.download = 'a4kremove-bg.png';
+        document.body.appendChild(anchorElement);
+
+        anchorElement.click();
+
+        document.body.removeChild(anchorElement);
+        });
+    </script>
+</body>
+</html>
